@@ -1,66 +1,54 @@
-package lucene.demo;
+package com.arthurkoehl.lucene;
 
-import java.util.Iterator;
+import java.io.IOException;
+import java.nio.file.Paths;
 
-import lucene.demo.search.*;
-import lucene.demo.business.*;
-
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.index.IndexWriter;
-
-import org.apache.lucene.document.Document;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.Directory;
 
-/**
- *
- * @author John
- */
-public class Main {
+public class Search {
 
-    /** Creates a new instance of Main */
-    public Main() {
+    public Search() {
     }
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
 
+    public static void main(String[] args) throws IOException {
+
+	Search search = new Search();
+
+	System.out.println("Running Search");
+	Analyzer analyzer = new StandardAnalyzer();
+
+	Directory directory = FSDirectory.open(Paths.get("index"));
+	DirectoryReader ireader = DirectoryReader.open(directory);
+	IndexSearcher isearcher = new IndexSearcher(ireader);
+
+	QueryParser parser = new QueryParser("title", analyzer);
 	try {
-	    // build a lucene index
-	    System.out.println("rebuildIndexes");
-	    Indexer  indexer = new Indexer();
-	    indexer.rebuildIndexes();
-	    System.out.println("rebuildIndexes done");
+	    Query query = parser.parse("hermit");
+	    System.out.println(isearcher.count(query));
+	    ScoreDoc[] hits = isearcher.search(query, 10).scoreDocs;
 
-	    // perform search on "Notre Dame museum"
-	    // and retrieve the top 100 result
-	    System.out.println("performSearch");
-	    SearchEngine se = new SearchEngine();
-	    TopDocs topDocs = se.performSearch("Notre Dame museum", 100);
-
-	    System.out.println("Results found: " + topDocs.totalHits);
-	    ScoreDoc[] hits = topDocs.scoreDocs;
+	    // Iterate through the results:
 	    for (int i = 0; i < hits.length; i++) {
-		Document doc = se.getDocument(hits[i].doc);
-		System.out.println(doc.get("name")
-			+ " " + doc.get("city")
-			+ " (" + hits[i].score + ")");
-
+		Document hitDoc = isearcher.doc(hits[i].doc);
+		System.out.println(hitDoc);
 	    }
-	    System.out.println("performSearch done");
-	} catch (Exception e) {
-	    System.out.println("Exception caught.\n");
 	}
-    }
+	catch(Exception e) {
+	    e.printStackTrace();
+	}
 
+	ireader.close();
+	directory.close();
+    }
 }
