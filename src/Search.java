@@ -31,10 +31,13 @@ public class Search {
 	Directory directory = FSDirectory.open(Paths.get("index"));
 	DirectoryReader ireader = DirectoryReader.open(directory);
 	IndexSearcher isearcher = new IndexSearcher(ireader);
+	System.out.println(isearcher.collectionStatistics("Title"));
+	System.out.println(isearcher.collectionStatistics("Year"));
+	System.out.println(isearcher.collectionStatistics("Score"));
 
-	QueryParser parser = new QueryParser("title", analyzer);
+	QueryParser parser = new QueryParser("Title", analyzer);
 	try {
-	    Query query = parser.parse("hermit");
+	    Query query = parser.parse("dog");
 	    System.out.println(isearcher.count(query));
 	    ScoreDoc[] hits = isearcher.search(query, 10).scoreDocs;
 
